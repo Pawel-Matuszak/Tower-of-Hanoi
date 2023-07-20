@@ -1,59 +1,30 @@
 import { IStack } from "~/types";
 
-class StackNode<T> {
-  data: T;
-  next: StackNode<T> | null;
-
-  constructor(data: T) {
-    this.data = data;
-    this.next = null;
-  }
-}
-
 class Stack<T> implements IStack<T> {
-  private top: StackNode<T> | null;
-  private size: number;
+  items: T[];
 
-  constructor(private capacity: number = Infinity) {
-    this.top = null;
-    this.size = 0;
+  constructor() {
+    this.items = [];
   }
 
-  isEmpty(): boolean {
-    return this.size === 0;
+  push(element: T) {
+    this.items.push(element);
   }
 
-  getSize(): number {
-    return this.size;
+  pop() {
+    return this.items.pop();
   }
 
-  push(data: T) {
-    if (this.size === this.capacity) {
-      throw new Error("Stack is full");
-    }
-
-    const newNode = new StackNode(data);
-    newNode.next = this.top;
-    this.top = newNode;
-    this.size++;
+  peek() {
+    return this.items[this.items.length - 1];
   }
 
-  pop(): T {
-    if (this.top === null) {
-      throw new Error("Stack is empty");
-    }
-    const removedNode = this.top;
-    this.top = this.top.next;
-    this.size--;
-    return removedNode.data;
+  isEmpty() {
+    return this.items.length === 0;
   }
 
-  peek(): T {
-    if (this.top === null) {
-      throw new Error("Stack is empty");
-    }
-    return this.top.data;
+  size() {
+    return this.items.length;
   }
 }
-
 export default Stack;
