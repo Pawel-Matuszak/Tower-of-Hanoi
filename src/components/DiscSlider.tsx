@@ -13,7 +13,9 @@ const DiscSlider = ({ getDiscNumber }: Props) => {
 
   return (
     <div className="m-2">
-      <label className="text-center text-white">Discs Number</label>
+      <label className="text-center text-white">
+        Number of discs: {sliderValue}
+      </label>
       <input
         type="range"
         min="1"

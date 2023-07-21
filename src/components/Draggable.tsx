@@ -21,7 +21,7 @@ const Draggable: React.FC<Props> = ({ children, id }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className="z-10 w-full"
+      className="z-10 w-full touch-none"
     >
       {children}
     </div>
