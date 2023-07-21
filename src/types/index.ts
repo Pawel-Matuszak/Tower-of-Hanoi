@@ -5,3 +5,5 @@ export interface IStack<T> {
   isEmpty(): boolean;
   size(): number;
 }
+
+export type Stack = number[];
