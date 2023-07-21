@@ -108,11 +108,10 @@ export default function Home() {
         <h2 className=" text-center text-xl font-bold">
           {isWon ? `You win in ${count} moves` : `Moves: ${count}`}
         </h2>
-        {!isWon && (
-          <h3 className="text-l my-2  text-center font-bold">
-            Best: {bestPossibleCount}
-          </h3>
-        )}
+
+        <h3 className="text-l my-2  text-center font-bold">
+          Best: {bestPossibleCount}
+        </h3>
 
         <div className="mt-8 flex flex-row flex-wrap items-center justify-center">
           <DiscSlider getDiscNumber={getDiscNumber} />
