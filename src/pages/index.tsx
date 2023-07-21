@@ -1,20 +1,28 @@
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import Head from "next/head";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import DiscSlider from "~/components/DiscSlider";
+import RestartBtn from "~/components/RestartBtn";
 import StackComponent from "~/components/StackComponent";
 import { Stack } from "~/types";
 import { STARTING_ITEMS } from "~/utils";
 
 export default function Home() {
+  const [discStore, setDiscStore] = useState<Stack>(STARTING_ITEMS);
   const [stackLeft, setStackLeft] = useState<Stack>(STARTING_ITEMS);
   const [stackMiddle, setStackMiddle] = useState<Stack>([]);
   const [stackRight, setStackRight] = useState<Stack>([]);
   const [count, setCount] = useState(0);
+  const [bestPossibleCount, setBestPossibleCount] = useState(0);
   const [isWon, setIsWon] = useState(false);
 
   useEffect(() => {
-    if (stackRight.length === STARTING_ITEMS.length) setIsWon(true);
-  }, [stackRight]);
+    newGameInit(STARTING_ITEMS);
+  }, []);
+
+  useEffect(() => {
+    if (stackRight.length === discStore.length) setIsWon(true);
+  }, [stackRight, discStore]);
 
   const move = (
     dispatchFrom: Dispatch<SetStateAction<Stack>>,
@@ -72,6 +80,22 @@ export default function Home() {
     }
   };
 
+  const newGameInit = (discArray: number[]) => {
+    setDiscStore(discArray);
+    setStackLeft(discArray);
+    setStackMiddle([]);
+    setStackRight([]);
+    setCount(0);
+    setIsWon(false);
+    setBestPossibleCount(Math.pow(2, discArray.length) - 1);
+  };
+
+  const getDiscNumber = (discNumber: number) => {
+    const newStack = Array.from({ length: discNumber }, (_, i) => i + 1);
+    newGameInit(newStack);
+    setDiscStore(newStack);
+  };
+
   return (
     <>
       <Head>
@@ -81,41 +105,42 @@ export default function Home() {
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1C244A] to-[#0e1225] text-white">
         <h1 className="my-2 text-center text-4xl font-bold">Tower of Hanoi</h1>
-
         <h2 className=" text-center text-xl font-bold">
           {isWon ? `You win in ${count} moves` : `Moves: ${count}`}
         </h2>
         {!isWon && (
           <h3 className="text-l my-2  text-center font-bold">
-            Best: {Math.pow(2, STARTING_ITEMS.length) - 1}
+            Best: {bestPossibleCount}
           </h3>
         )}
 
-        {/* TODO: TOOLS TO CHANGE NUMBER OF DISCS restart and auto solve */}
-        <div className="mb-8 flex flex-row items-center justify-center">
-          <button
-            className="ml-2"
-            onClick={() => {
-              setStackLeft(STARTING_ITEMS);
-              setStackMiddle([]);
-              setStackRight([]);
-              setCount(0);
-              setIsWon(false);
-            }}
-          >
-            Restart
-          </button>
+        <div className="mt-8 flex flex-row flex-wrap items-center justify-center">
+          <DiscSlider getDiscNumber={getDiscNumber} />
+          <RestartBtn onRestart={newGameInit} discStore={discStore} />
+          {/* <AutoSolver/> */}
         </div>
 
         <DndContext onDragEnd={onDragEnd}>
-          <div className="flex min-h-[60vh] w-screen max-w-5xl flex-row items-end justify-between">
-            <StackComponent stack={stackLeft} id="left" />
-            <StackComponent stack={stackMiddle} id="middle" />
-            <StackComponent stack={stackRight} id="right" />
+          <div
+            className={`flex min-h-[50vh] w-screen ${
+              discStore.length < 7 ? "max-w-5xl" : "max-w-6xl"
+            } flex-row items-end justify-between`}
+          >
+            <StackComponent stack={stackLeft} id="left" discStore={discStore} />
+            <StackComponent
+              stack={stackMiddle}
+              id="middle"
+              discStore={discStore}
+            />
+            <StackComponent
+              stack={stackRight}
+              id="right"
+              discStore={discStore}
+            />
           </div>
-          <div className="z-10 h-5 w-full bg-sky-800"></div>
+          <div className="z-10 h-5 w-full bg-sky-700"></div>
         </DndContext>
-        <p className="my-8 max-w-2xl text-center text-slate-300">
+        <p className="my-8 max-w-2xl px-2 text-center text-slate-300">
           Tower of Hanoi is a mathematical puzzle game where the objective is to
           move a stack of disks from one peg to another, using a third peg as an
           intermediary, while following the rule of placing larger disks on top
