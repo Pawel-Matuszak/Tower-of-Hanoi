@@ -7,3 +7,5 @@ export interface IStack<T> {
 }
 
 export type Stack = number[];
+
+export type StackName = "left" | "middle" | "right";

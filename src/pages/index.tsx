@@ -4,8 +4,8 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import DiscSlider from "~/components/DiscSlider";
 import RestartBtn from "~/components/RestartBtn";
 import StackComponent from "~/components/StackComponent";
-import { Stack } from "~/types";
-import { STARTING_ITEMS } from "~/utils";
+import { Stack, StackName } from "~/types";
+import { STARTING_ITEMS, delay } from "~/utils";
 
 export default function Home() {
   const [discStore, setDiscStore] = useState<Stack>(STARTING_ITEMS);
@@ -14,26 +14,32 @@ export default function Home() {
   const [stackRight, setStackRight] = useState<Stack>([]);
   const [count, setCount] = useState(0);
   const [bestPossibleCount, setBestPossibleCount] = useState(0);
-  const [isWon, setIsWon] = useState(false);
+  const [moveDisabled, setMoveDisabled] = useState(true);
 
   useEffect(() => {
     newGameInit(STARTING_ITEMS);
   }, []);
 
   useEffect(() => {
-    if (stackRight.length === discStore.length) setIsWon(true);
+    //game won
+    if (stackRight.length === discStore.length) setMoveDisabled(true);
   }, [stackRight, discStore]);
 
-  const move = (
+  const move = async (
     dispatchFrom: Dispatch<SetStateAction<Stack>>,
     dispatchTo: Dispatch<SetStateAction<Stack>>
   ) => {
-    dispatchFrom((prev) => {
-      if (prev.length === 0) return [];
+    await new Promise((res) => {
+      dispatchFrom((prev) => {
+        if (prev.length === 0) return [];
 
-      const poppedItem = prev[0] ?? 0;
-      dispatchTo((prev) => [poppedItem, ...prev]);
-      return prev.slice(1);
+        const poppedItem = prev[0] ?? 0;
+        dispatchTo((prev) => [poppedItem, ...prev]);
+        setCount((prev) => prev + 1);
+
+        res(true);
+        return prev.slice(1);
+      });
     });
   };
 
@@ -41,16 +47,25 @@ export default function Home() {
     if (stackFrom.length === 0) return false;
     const fromItem = stackFrom[0];
     const toItem = stackTo[0];
-    return !isWon && (!toItem || !fromItem || fromItem < toItem);
+    return !moveDisabled && (!toItem || !fromItem || fromItem < toItem);
   };
 
-  const onDragEnd = (event: DragEndEvent) => {
+  const stackMap = {
+    left: stackLeft,
+    middle: stackMiddle,
+    right: stackRight,
+  };
+
+  const stackDispatchMap = {
+    left: setStackLeft,
+    middle: setStackMiddle,
+    right: setStackRight,
+  };
+
+  const onDragEnd = async (event: DragEndEvent) => {
     if (!event.over) return;
     const discId = event.active.id;
-    const stackDestId: "left" | "middle" | "right" = event.over.id as
-      | "left"
-      | "middle"
-      | "right";
+    const stackDestId: "left" | "middle" | "right" = event.over.id as StackName;
     const stackStartId =
       stackLeft[0] == discId
         ? "left"
@@ -60,24 +75,27 @@ export default function Home() {
         ? "right"
         : null;
 
-    if (stackStartId === null) return;
-
-    const stackMap = {
-      left: stackLeft,
-      middle: stackMiddle,
-      right: stackRight,
-    };
-
-    const stackDispatchMap = {
-      left: setStackLeft,
-      middle: setStackMiddle,
-      right: setStackRight,
-    };
+    if (stackStartId === null || moveDisabled) return;
 
     if (validateMove(stackMap[stackStartId], stackMap[stackDestId])) {
-      move(stackDispatchMap[stackStartId], stackDispatchMap[stackDestId]);
-      setCount((prev) => prev + 1);
+      await move(stackDispatchMap[stackStartId], stackDispatchMap[stackDestId]);
     }
+  };
+
+  const solveTower = async (
+    n: number,
+    from: StackName,
+    to: StackName,
+    aux: StackName
+  ) => {
+    if (n === 0) {
+      return;
+    }
+    await solveTower(n - 1, from, aux, to);
+    console.log(`Move disk ${n} from ${from} to ${to}`);
+    await delay(500);
+    await move(stackDispatchMap[from], stackDispatchMap[to]);
+    await solveTower(n - 1, aux, to, from);
   };
 
   const newGameInit = (discArray: number[]) => {
@@ -86,7 +104,7 @@ export default function Home() {
     setStackMiddle([]);
     setStackRight([]);
     setCount(0);
-    setIsWon(false);
+    setMoveDisabled(false);
     setBestPossibleCount(Math.pow(2, discArray.length) - 1);
   };
 
@@ -106,7 +124,7 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1C244A] to-[#0e1225] text-white">
         <h1 className="my-2 text-center text-4xl font-bold">Tower of Hanoi</h1>
         <h2 className=" text-center text-xl font-bold">
-          {isWon ? `You win in ${count} moves` : `Moves: ${count}`}
+          {moveDisabled ? `You win in ${count} moves` : `Moves: ${count}`}
         </h2>
 
         <h3 className="text-l my-2  text-center font-bold">
@@ -117,6 +135,17 @@ export default function Home() {
           <DiscSlider getDiscNumber={getDiscNumber} />
           <RestartBtn onRestart={newGameInit} discStore={discStore} />
           {/* <AutoSolver/> */}
+          <button
+            className="my-2 rounded-md bg-sky-700 px-4 py-2 text-white"
+            onClick={async () => {
+              setMoveDisabled(true);
+              await solveTower(discStore.length, "left", "right", "middle");
+              setMoveDisabled(false);
+            }}
+          >
+            solve (est time:{" "}
+            {((Math.pow(2, discStore.length) - 1) * 500) / 1000} s)
+          </button>
         </div>
 
         <DndContext onDragEnd={onDragEnd}>
