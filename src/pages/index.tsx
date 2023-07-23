@@ -16,14 +16,14 @@ export default function Home() {
   const [count, setCount] = useState(0);
   const [bestPossibleCount, setBestPossibleCount] = useState(0);
   const [moveDisabled, setMoveDisabled] = useState(true);
+  const [isWon, setIsWon] = useState(false);
 
   useEffect(() => {
     newGameInit(STARTING_ITEMS);
   }, []);
 
   useEffect(() => {
-    //game won
-    if (stackRight.length === discStore.length) setMoveDisabled(true);
+    if (stackRight.length === discStore.length) setIsWon(true);
   }, [stackRight, discStore]);
 
   const move = async (
@@ -48,7 +48,9 @@ export default function Home() {
     if (stackFrom.length === 0) return false;
     const fromItem = stackFrom[0];
     const toItem = stackTo[0];
-    return !moveDisabled && (!toItem || !fromItem || fromItem < toItem);
+    return (
+      !moveDisabled && !isWon && (!toItem || !fromItem || fromItem < toItem)
+    );
   };
 
   const stackMap = {
@@ -84,10 +86,9 @@ export default function Home() {
   };
 
   const autoSolve = async () => {
-    setMoveDisabled(true);
     newGameInit(discStore);
+    setMoveDisabled(true);
     await solveTower(discStore.length, "left", "right", "middle");
-    setMoveDisabled(false);
   };
 
   const solveTower = async (
@@ -113,6 +114,7 @@ export default function Home() {
     setStackRight([]);
     setCount(0);
     setMoveDisabled(false);
+    setIsWon(false);
     setBestPossibleCount(Math.pow(2, discArray.length) - 1);
   };
 
@@ -132,7 +134,7 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1C244A] to-[#0e1225] text-white">
         <h1 className="my-2 text-center text-4xl font-bold">Tower of Hanoi</h1>
         <h2 className=" text-center text-xl font-bold">
-          {moveDisabled ? `You win in ${count} moves` : `Moves: ${count}`}
+          {isWon ? `You win in ${count} moves` : `Moves: ${count}`}
         </h2>
 
         <h3 className="text-l my-2  text-center font-bold">
@@ -142,7 +144,12 @@ export default function Home() {
         <div className="mt-8 flex flex-row flex-wrap items-center justify-center">
           <DiscSlider getDiscNumber={getDiscNumber} />
           <RestartBtn onRestart={newGameInit} discStore={discStore} />
-          <AutoSolver autoSolve={autoSolve} discStore={discStore} />
+          <AutoSolver
+            autoSolve={autoSolve}
+            discStore={discStore}
+            moveDisabled={moveDisabled}
+            isWon={isWon}
+          />
         </div>
 
         <DndContext onDragEnd={onDragEnd}>
