@@ -1,6 +1,7 @@
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import Head from "next/head";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import AutoSolver from "~/components/AutoSolver";
 import DiscSlider from "~/components/DiscSlider";
 import RestartBtn from "~/components/RestartBtn";
 import StackComponent from "~/components/StackComponent";
@@ -82,6 +83,13 @@ export default function Home() {
     }
   };
 
+  const autoSolve = async () => {
+    setMoveDisabled(true);
+    newGameInit(discStore);
+    await solveTower(discStore.length, "left", "right", "middle");
+    setMoveDisabled(false);
+  };
+
   const solveTower = async (
     n: number,
     from: StackName,
@@ -134,18 +142,7 @@ export default function Home() {
         <div className="mt-8 flex flex-row flex-wrap items-center justify-center">
           <DiscSlider getDiscNumber={getDiscNumber} />
           <RestartBtn onRestart={newGameInit} discStore={discStore} />
-          {/* <AutoSolver/> */}
-          <button
-            className="my-2 rounded-md bg-sky-700 px-4 py-2 text-white"
-            onClick={async () => {
-              setMoveDisabled(true);
-              await solveTower(discStore.length, "left", "right", "middle");
-              setMoveDisabled(false);
-            }}
-          >
-            solve (est time:{" "}
-            {((Math.pow(2, discStore.length) - 1) * 500) / 1000} s)
-          </button>
+          <AutoSolver autoSolve={autoSolve} discStore={discStore} />
         </div>
 
         <DndContext onDragEnd={onDragEnd}>
